@@ -6,4 +6,4 @@ fresh
 panic
 crazy
 buggy
-sacre
+scare

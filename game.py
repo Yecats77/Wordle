@@ -7,9 +7,9 @@ class GameFactory():
     def new_game(game_type_idx: int, max_round: int, word_path_idx: int): 
         g = None
         if game_type_idx == 0:
-        #     g = NormalGame(max_round, f'data/{Game.word_path_list[word_path_idx]}.txt')
-        # elif game_type_idx == 1:
             g =  ServerClientGame(max_round, f'data/{Game.word_path_list[word_path_idx]}.txt')
+        elif game_type_idx == 1:
+            g = HostCheatingGame(max_round, f'data/{Game.word_path_list[word_path_idx]}.txt')
         g.set_state('setup')
         return g
 
@@ -132,8 +132,34 @@ class HostCheatingGame(Game):
         self.game_type = 'host cheating'
         self.wordle = WordleFactory().new_wordle(self.game_type, max_round, word_path)
 
-    def play(self, ):
-        pass
+    def play(self, co):
+        precnt = -1
+        while True:
+            if len(self.client_input_word_list) >= self.wordle.max_round:
+                break
+            if len(self.client_input_word_list) > 0 and self.client_input_word_list[-1][1] == '00000':
+                co.client_socket.send('PRINT:Win'.encode('utf-8'))
+                self.set_result('win')
+                break
+            if len(self.client_input_word_list) > precnt or (len(co.command_history) > 0 and co.command_history[-1][2].split(':')[0] == 'REQUIREINPUTWORD'):
+                co.client_socket.send('INPUTWORD:'.encode('utf-8'))
+                co.add_command_history('s', 'c', 'INPUTWORD:')
+                precnt = len(self.client_input_word_list)
+            else:
+                time.sleep(0.1)
+
+        print('self.result', self.result)
+        if self.result != 'win':
+            self.set_result('lose')
+        self.set_state('end')
+        return
+        
 
     def score(self, word: str):
-        pass
+        if len(word) != 5:
+            return False, 'Wrong word length'
+        elif word not in self.wordle.word_list:
+            return False, 'Invalid word'
+        else:
+            res = self.wordle.check(word)
+            return True, res

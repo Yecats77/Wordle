@@ -75,7 +75,7 @@ class Server:
                 co.game.client_input_word_list.append([param, msg])
             else:
                 full_cmd = f'PRINT:{msg}'
-                co.add_command_history('s', 'c', full_cmd.encode('utf-8'))
+                co.add_command_history('s', 'c', full_cmd)
                 co.client_socket.send(f'PRINT:{msg}'.encode('utf-8'))
                 co.add_command_history('s', 'g', 'REQUIREINPUTWORD:')
 
