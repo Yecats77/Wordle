@@ -1,6 +1,6 @@
 import time
 
-from wordle import Wordle
+from wordle import WordleFactory, NormalWordle, HostCheatingWordle
 
 class GameFactory():
     @staticmethod
@@ -15,14 +15,14 @@ class GameFactory():
 
 class Game():
     # game_type_list = ['normal', 'server/client']
-    game_type_list = ['server/client']
+    game_type_list = ['server/client', 'host cheating']
     word_path_list = ['full', 'short']
     max_score: int = 0 
 
     def __init__(self, max_round: int, word_path: str):
         self.state = 'notsetup' # notsetup, setup, playing
         self.result = 'none' # none, win, lose
-        self.wordle = Wordle(max_round = max_round, word_path = word_path)
+        self.wordle = None
         self.client_input_word_list = []
 
     def set_state(self, state):
@@ -52,38 +52,38 @@ class Game():
         return int(game_type_idx), int(max_round), int(word_path_idx)
     
     
+'''
+class NormalGame(Game):
+    game_type = ''
 
-# class NormalGame(Game):
-#     game_type = ''
+    def __init__(self, max_round: int, word_path: str):
+        super().__init__(max_round = max_round, word_path = word_path)
+        self.game_type = 'normal'
 
-#     def __init__(self, max_round: int, word_path: str):
-#         super().__init__(max_round = max_round, word_path = word_path)
-#         self.game_type = 'normal'
+    def play(self, server_socket, client_socket):
+        # p = Player()
+        # self.player_list.append(p)
 
-#     def play(self, server_socket, client_socket):
-#         # p = Player()
-#         # self.player_list.append(p)
+        for i in range(self.wordle.max_round):
+            client_socket.send('INPUTWORD:'.encode('utf-8'))
 
-#         for i in range(self.wordle.max_round):
-#             client_socket.send('INPUTWORD:'.encode('utf-8'))
-
-#             # w = input('Please input:\t')
-#             # if len(w) != 5:
-#             #     print('Wrong word length')
-#             #     i -= 1
-#             # elif w not in self.wordle.word_list:
-#             #     print('Invalid word')
-#             #     i -= 1
-#             # else:
-#             #     result = self.wordle.check(w)
-#             #     print('round', str(i) + ':', '\t', result)
-#             #     if result == '00000':
-#             #         print('WIN')
-#             #         return
+            # w = input('Please input:\t')
+            # if len(w) != 5:
+            #     print('Wrong word length')
+            #     i -= 1
+            # elif w not in self.wordle.word_list:
+            #     print('Invalid word')
+            #     i -= 1
+            # else:
+            #     result = self.wordle.check(w)
+            #     print('round', str(i) + ':', '\t', result)
+            #     if result == '00000':
+            #         print('WIN')
+            #         return
         
-#         print('LOSE')
-#         print('The objective word is', self.wordle.objective_word)
-
+        print('LOSE')
+        print('The objective word is', self.wordle.objective_word)
+'''
 
 class ServerClientGame(Game):
     game_type = ''
@@ -91,6 +91,7 @@ class ServerClientGame(Game):
     def __init__(self, max_round: int, word_path: str):
         super().__init__(max_round = max_round, word_path = word_path)
         self.game_type = 'server/client'
+        self.wordle = WordleFactory().new_wordle(self.game_type, max_round, word_path)
     
     def play(self, co):
         precnt = -1
@@ -124,3 +125,15 @@ class ServerClientGame(Game):
             res = self.wordle.check(word)
             return True, res
     
+class HostCheatingGame(Game):
+
+    def __init__(self, max_round: int, word_path: str):
+        super().__init__(max_round = max_round, word_path = word_path)
+        self.game_type = 'host cheating'
+        self.wordle = WordleFactory().new_wordle(self.game_type, max_round, word_path)
+
+    def play(self, ):
+        pass
+
+    def score(self, word: str):
+        pass

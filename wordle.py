@@ -2,11 +2,17 @@
 
 import random
 
-# normal wordle
+class WordleFactory():
+    @staticmethod
+    def new_wordle(game_type: str, max_round: int, word_path: str):
+        w = None
+        if game_type == 'host cheating':
+            w = HostCheatingWordle(max_round, word_path)
+        else:
+            w = NormalWordle(max_round, word_path)
+        return w
+
 class Wordle:
-    # max_round = 0
-    # objective_word = ''
-    # word_list = []
 
     def __init__(self, max_round: int = 6, word_path: str = 'data/configurable'):
         self.set_max_round(max_round)
@@ -29,6 +35,8 @@ class Wordle:
     def score(self, ):
         pass
 
+class NormalWordle(Wordle):
+
     def check(self, input_word: str):
         res = '' 
         for i in range(5):
@@ -39,5 +47,8 @@ class Wordle:
             else:
                 res += '_'
         return res
+    
+class HostCheatingWordle(Wordle):
 
-# game = Wordle()
+    def check(self, input_word: str):
+        pass
