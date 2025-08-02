@@ -40,11 +40,12 @@ port 7368
 ```bash
 sudo npm install -g @vue/cli
 vue create wordle_web
-npm install axios
 sudo apt install vite
-npm install vite@latest
+npm install axios
+npm install vite@2.9.18 @vitejs/plugin-vue@2.3.4
 npm install naive-ui
-npm install antd @types/antd
+npm install axios
+# npm install antd @types/antd
 npm install
 npm run dev
 
