@@ -16,7 +16,7 @@ class Client:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         time.sleep(1)  # Delay for 1 second
         self.socket.connect(('127.0.0.1', 5555))
-        print('Connected')
+        print('Connected:', self.socket.getsockname())
         
     def listen_to_server(self):
         while self.socket:
@@ -29,20 +29,25 @@ class Client:
                 self.connected = False
 
     def select_game(self, ):
-        game_type_idx, max_round, word_path_idx = Game.setup_game_console()
-        json_list = json.dumps([game_type_idx, max_round, word_path_idx])  
-        self.socket.send(f"SETUPGAME:{json_list}\n".encode('utf-8'))
+        param_json = Game.setup_game_console()
+        self.socket.send(f"SETUPGAME|{param_json}\n".encode('utf-8'))
 
     def handle_command(self, commands):
         for command in commands.split('\n'):
-            cmds = command.strip().split(':') 
+            if not command.strip(): # skip empty line
+                continue  
+            cmds = command.strip().split('|') 
             cmd = cmds[0]
 
             if cmd == 'PRINT':
                 print(f'Message from server: {command}\n')
+            elif cmd == 'SELECTOPPONENT':
+                op = input('Select opponent (in the format of ip-port): e.g., 127.0.0.1-8888\n')
+                msg = f'{self.socket.getsockname()[0]}-{self.socket.getsockname()[1]}-{op}'
+                self.socket.send(f'SELECTOPPONENT|{msg}\n'.encode('utf-8'))
             elif cmd == 'INPUTWORD':
                 w = input('Input word: ')
-                self.socket.send(f"INPUTWORD:{w}\n".encode('utf-8'))
+                self.socket.send(f"INPUTWORD|{w}\n".encode('utf-8'))
             elif cmd == 'CLOSECONNECTION':
                 self.close_connection()
         

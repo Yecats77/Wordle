@@ -6,15 +6,18 @@ class WordleFactory():
     @staticmethod
     def new_wordle(game_type: str, max_round: int, word_path: str):
         w = None
-        if game_type == 'host cheating':
-            w = HostCheatingWordle(max_round, word_path)
-        else:
+        if game_type == 'server/client':
             w = NormalWordle(max_round, word_path)
+        elif game_type == 'host cheating':
+            w = HostCheatingWordle(max_round, word_path)
+        elif game_type == 'multi-player':
+            w = MultiPlayerWordle(max_round, word_path)
         return w
 
 class Wordle:
 
     def __init__(self, max_round: int = 6, word_path: str = 'data/full'):
+        self.word_path = word_path
         self.set_max_round(max_round)
         self.set_word_list(word_path)
 
@@ -22,6 +25,7 @@ class Wordle:
         self.max_round = max_round
 
     def set_word_list(self, word_path: str):
+        self.word_path = word_path
         with open(word_path, mode = 'r') as f:
             L = f.readlines()
         self.word_list = [i.strip().replace('\n', '') for i in L]
@@ -55,24 +59,6 @@ class HostCheatingWordle(Wordle):
         super().__init__(max_round, word_path)
         self.objective_word = ''
         self.candidate_word_list = self.word_list
-
-    # def cnt_char(self, word1, word2): # count num of char from word1 in word2
-    #     cnt = 0
-    #     for c in word1:
-    #         if c in word2:
-    #             cnt += 1
-    #     return cnt
-    
-    # def return_char(self, input_word):
-    #     res = '' 
-    #     for i in range(5):
-    #         if input_word[i] == self.objective_word[i]:
-    #             res += '0'
-    #         elif input_word[i] in self.objective_word:
-    #             res += '?'
-    #         else:
-    #             res += '_'
-    #     return res
 
     def score(self, word1, word2):
         s = 0
@@ -125,5 +111,44 @@ class HostCheatingWordle(Wordle):
         else:
             return self.check_util(input_word)
 
-            
+class MultiPlayerWordle(Wordle):
+    def __init__(self, max_round = 6, word_path = 'data/full'):
+        print('set multiplyer wordle')
+        if max_round is None or word_path is None:
+            self.max_round = None
+            self.word_list = None
+            self.word_path = word_path
+            self.objective_word = None
+        else:
+            super().__init__(max_round, word_path)
+            self.word_path = word_path
+            self.objective_word = self.random_word()
+        print('wordle init self.word_path', self.word_path)
+        print('set wordle completed')
+
+    def re_init(self, max_round: int, word_path: str):
+        try:
+            super().__init__(max_round, word_path)
+            self.word_path = word_path
+            print('wordle re-init self.word_path', self.word_path)
+        except Exception as e:
+            print(f'word_path {word_path}')
+            print(f"Error re-initializing MultiPlayerWordle: {e}")
+
+    def set_objective_word(self, objective_word: str):
+        self.objective_word = objective_word
+
+    def random_word(self, ):
+        return random.choice(self.word_list)
+
+    def check(self, input_word: str):
+        res = '' 
+        for i in range(5):
+            if input_word[i] == self.objective_word[i]:
+                res += '0'
+            elif input_word[i] in self.objective_word:
+                res += '?'
+            else:
+                res += '_'
+        return res
 
