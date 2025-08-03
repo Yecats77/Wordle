@@ -37,7 +37,6 @@ class NormalWordle(Wordle):
     def __init__(self, max_round = 6, word_path = 'data/full'):
         super().__init__(max_round, word_path)
         self.objective_word = self.random_word()
-        print('==========>', self.objective_word)
 
     def random_word(self, ):
         return random.choice(self.word_list)
