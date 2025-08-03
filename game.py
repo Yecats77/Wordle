@@ -3,7 +3,6 @@ import json
 from colorama import Fore, Style
 
 from wordle import WordleFactory, NormalWordle, HostCheatingWordle
-# from server import Server
 from connection import Connection 
 
 class GameFactory():

@@ -1,6 +1,7 @@
 # wget https://raw.githubusercontent.com/tabatkins/wordle-list/main/words 
 
 import random
+from colorama import Fore, Style
 
 class WordleFactory():
     @staticmethod
@@ -115,24 +116,27 @@ class HostCheatingWordle(Wordle):
 
 class MultiPlayerWordle(Wordle):
     def __init__(self, max_round = 6, word_path = 'data/full'):
-        print('set multiplyer wordle')
+        print(Fore.CYAN + "[ Initializing MultiPlayer Wordle Game ]" + Style.RESET_ALL)
         if max_round is None or word_path is None:
             self.max_round = None
             self.word_list = None
             self.word_path = word_path
             self.objective_word = None
+            print(Fore.YELLOW + "Incomplete configuration (waiting for host setup)" + Style.RESET_ALL)
         else:
             super().__init__(max_round, word_path)
             self.word_path = word_path
             self.objective_word = self.random_word()
-        print('wordle init self.word_path', self.word_path)
-        print('set wordle completed')
+            print(Fore.GREEN + "Game initialized successfully:" + Style.RESET_ALL)
+            print(Fore.GREEN + f"  - Max Rounds       : {self.max_round}" + Style.RESET_ALL)
+            print(Fore.GREEN + f"  - Word List Source : {self.word_path}" + Style.RESET_ALL)
+            print(Fore.MAGENTA + f"  - Objective Word   : {self.objective_word}" + Style.RESET_ALL)
+        print(Fore.CYAN + "[ MultiPlayerWordle Ready ]\n" + Style.RESET_ALL)
 
     def re_init(self, max_round: int, word_path: str):
         try:
             super().__init__(max_round, word_path)
             self.word_path = word_path
-            print('wordle re-init self.word_path', self.word_path)
         except Exception as e:
             print(f'word_path {word_path}')
             print(f"Error re-initializing MultiPlayerWordle: {e}")
@@ -141,7 +145,6 @@ class MultiPlayerWordle(Wordle):
         self.objective_word = objective_word
 
     def random_word(self, ):
-        print('wordle.random_word self.word_list', self.word_list)
         return random.choice(self.word_list)
 
     def check(self, input_word: str):

@@ -3,6 +3,7 @@ import threading
 import sys
 import json
 from colorama import Fore, Style
+import time
 
 from game import GameFactory
 from connection import Connection
@@ -15,40 +16,41 @@ class Server:
         self.pre_connection_list: list[Connection] = []
     
     #  always listen to new connections
-    def start_connection(self, ):
+    def start_connection(self):
         for i in range(7):
             try:
                 self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                self.socket.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR, 1)
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 self.socket.bind(('0.0.0.0', 5555))
                 self.socket.listen(5)
-                print("Server started on port 5555")
+
+                print(Fore.GREEN + f"Server started on port 5555 — waiting for connections..." + Style.RESET_ALL)
 
                 while True:
                     client_socket, addr = self.socket.accept()
-                    print(f"Connection from {addr} accepted.")
+                    print(Fore.CYAN + f"Connection from {addr} accepted." + Style.RESET_ALL)
+
                     c = Connection(client_socket, addr)
-                    print(f'server.append_client_Socket {addr}')
+                    print(Fore.MAGENTA + f"Added to connection list: {addr}" + Style.RESET_ALL)
                     self.connection_list.append(c)
-                    threading.Thread(target = self.listen_to_client, args = (c,)).start()
-                    threading.Thread(target = self.execute_game, args = ()).start()
+
+                    threading.Thread(
+                        target=self.listen_to_client, args=(c,), daemon=True
+                    ).start()
+
+                    threading.Thread(
+                        target=self.execute_game, args=(), daemon=True
+                    ).start()
 
             except OSError as e:
-                print(f"Error: {e}. The address may already be in use.")
-                print('Retrying.')
+                print(Fore.RED + f"Error: {e}. Address may be in use." + Style.RESET_ALL)
+                print(Fore.YELLOW + f"Retrying in 3 seconds..." + Style.RESET_ALL)
+                time.sleep(3)
 
     def close_connection(self, ):
         self.socket.close()
 
     def listen_to_client(self, co: Connection):
-        # while co.client_socket:
-        #     try:
-        #         client_command = co.client_socket.recv(1024).decode('utf-8')
-        #         if client_command:
-        #             print(f"=======> Received: {client_command}")
-        #             self.handle_command(co, client_command)
-        #     except:
-        #         break
         while co.client_socket:
             try:
                 client_command = co.client_socket.recv(1024).decode('utf-8')
@@ -66,9 +68,6 @@ class Server:
             except Exception as e:
                 print(f"{Fore.RED}[ERROR]{Style.RESET_ALL} while receiving from {co.addr}: {e}")
                 break
-                
-        # connection.client_socket.close()
-        # self.client_list.remove(connection)
 
     @staticmethod
     def send_msg_to_client(co: Connection, src, des, msg):
@@ -109,8 +108,6 @@ class Server:
                 print('self.connection_list len', len(self.connection_list))
                 host_co = None
                 opponent_co = None
-                # for idx, co in enumerate(self.connection_list):
-                #     print(f'co {idx} {co.addr[0]} {co.addr[1]} {co.game}')
                 for co in self.connection_list:
                     ip_, port_ = co.addr
                     if ip_ == host_ip and str(port_) == str(host_port):
@@ -126,10 +123,7 @@ class Server:
                 host_co.game.set_opponent(opponent_co.addr)
                 opponent_co.game.set_opponent(host_co.addr)
                 opponent_co.game.set_objective_word(host_co.game.wordle.objective_word)
-                # print('server.handle_cmd host word path', host_co, host_co.game, host_co.game.wordle, host_co.game.wordle.word_path)
                 opponent_co.game.re_init(host_co.game.wordle.max_round, host_co.game.wordle.word_path)
-                # print('host state', host_co.game.state)
-                # print('opponent state', opponent_co.game.state)
                 host_co.game.set_state('setup')
                 opponent_co.game.set_state('setup')
 
@@ -186,10 +180,10 @@ class Server:
         while host_co.client_socket or opponent_co.client_socket:
             if host_co.game.result == 'win':
                 opponent_co.game.set_state('end')
-                # Server.send_msg_to_client(opponent_co, 's', 'c', 'PRINT|You lose')
+                Server.send_msg_to_client(opponent_co, 's', 'c', 'PRINT|Your oppone.nt wins')
             elif opponent_co.game.result == 'win':
                 host_co.game.set_state('end')
-                # Server.send_msg_to_client(host_co, 's', 'c', 'PRINT|You lose')
+                Server.send_msg_to_client(host_co, 's', 'c', 'PRINT|Your opponent wins.')
             elif host_co.game.result == 'lose' or opponent_co.game.result == 'lose':
                 host_co.game.set_state('end')
                 opponent_co.game.set_state('end')
