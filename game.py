@@ -21,8 +21,7 @@ class GameFactory():
         return g
 
 class Game():
-    # game_type_list = ['normal', 'server/client']
-    game_type_list = ['server/client', 'host cheating', 'multi-player']
+    game_type_list = ['server/client', 'host cheating', 'multi-player'] # normal
     word_path_list = ['full', 'short']
     max_score: int = 0 
 
@@ -39,11 +38,12 @@ class Game():
             co.add_command_history(src, des, msg)
             co.client_socket.send(msg.encode('utf-8'))
         except Exception as e:
-            print(f"Warning sending message to client {co.addr}: {e}")
-            print(f'The connection may have been closed or lost.')
+            pass
+            # print(f"Warning sending message to client {co.addr}: {e}")
+            # print(f'The connection may have been closed or lost.')
 
     def set_state(self, state):
-        if state not in ['notsetup', 'setup', 'setup_reminded', 'playing', 'end', 'end_reminded']:
+        if state not in ['notsetup', 'setup', 'setup_reminded', 'playing', 'refuse_result_msg', 'end', 'end_reminded']:
             raise NameError
         self.state = state
     
@@ -169,12 +169,13 @@ class ServerClientGame(Game):
     
     def play(self, co):
         precnt = -1
+        print(co.client_socket)
         while co.client_socket:
             if len(self.client_input_word_list) >= self.wordle.max_round:
                 break
             if len(self.client_input_word_list) > 0 and self.client_input_word_list[-1][1] == '00000':
-                Game.send_msg_to_client(co, 's', 'c', 'PRINT|Win')
                 self.set_result('win')
+                time.sleep(0.1)
                 break
             if len(self.client_input_word_list) > precnt or (len(co.command_history) > 0 and co.command_history[-1][2].split('|')[0] == 'REQUIREINPUTWORD'):
                 Game.send_msg_to_client(co, 's', 'c', 'INPUTWORD|')
@@ -182,9 +183,6 @@ class ServerClientGame(Game):
             else:
                 time.sleep(0.1)
 
-        print('self.result', self.result)
-        if self.result != 'win':
-            self.set_result('lose')
         self.set_state('end')
         return
         
@@ -215,10 +213,9 @@ class HostCheatingGame(Game):
             time.sleep(0.1)
             if len(self.client_input_word_list) >= self.wordle.max_round:
                 break
-            print('self.client_input_word_list', self.client_input_word_list)
             if len(self.client_input_word_list) > 0 and self.client_input_word_list[-1][1] == '00000':
-                # Game.send_msg_to_client(co, 's', 'c', 'PRINT|Win')
                 self.set_result('win')
+                time.sleep(0.1)
                 break
             if len(self.client_input_word_list) > precnt or (len(co.command_history) > 0 and co.command_history[-1][2].split('|')[0] == 'REQUIREINPUTWORD'):
                 Game.send_msg_to_client(co, 's', 'c', 'INPUTWORD|')
@@ -226,13 +223,6 @@ class HostCheatingGame(Game):
             else:
                 time.sleep(0.1)
         
-        if self.result == '':
-            if len(self.client_input_word_list) > 0 and self.client_input_word_list[-1][1] == '00000':
-                self.set_result('win')
-
-        print('self.result', self.result)
-        if self.result != 'win':
-            self.set_result('lose')
         self.set_state('end')
         return
         
@@ -257,12 +247,8 @@ class MultiPlayerGame(Game):
         word_path = f'data/{Game.word_path_list[int(word_path_idx)]}.txt' if word_path_idx != None else None
         self.is_host = param_dict['is_host']
         self.opponent = None
-        print('word_path', word_path)
         self.wordle = WordleFactory().new_wordle(self.game_type, max_round, word_path)
 
-        # if self.wordle:
-        #     self.set_state('setup')
-        # else:
         self.set_state('notsetup')
 
     def set_opponent(self, opponent):
@@ -283,6 +269,7 @@ class MultiPlayerGame(Game):
             if len(self.client_input_word_list) > 0 and self.client_input_word_list[-1][1] == '00000':
                 Game.send_msg_to_client(co, 's', 'c', 'PRINT|Win')
                 self.set_result('win')
+                time.sleep(0.1)
                 break
             if len(self.client_input_word_list) > precnt or (len(co.command_history) > 0 and co.command_history[-1][2].split('|')[0] == 'REQUIREINPUTWORD'):
                 Game.send_msg_to_client(co, 's', 'c', 'INPUTWORD|')
@@ -290,9 +277,8 @@ class MultiPlayerGame(Game):
             else:
                 time.sleep(0.1)
 
-        print('self.result', self.result)
-        if self.result != 'win':
-            self.set_result('lose')
+        # if self.result != 'win':
+        #     self.set_result('lose')
         self.set_state('end')
         return
 

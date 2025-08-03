@@ -50,7 +50,7 @@ class Client:
             print('-' * 40)
             print(Fore.GREEN + str + Style.RESET_ALL)
             print('=' * 40 + '\n')
-        elif 'lose' in str.lower().split(' ')[0]:
+        elif 'lose' in str.lower().split(' ')[0] or 'fail' in str.lower().split(' ')[0]:
             print('\n' + '=' * 40)
             print('🔴  Message from server')
             print('-' * 40)
@@ -62,6 +62,12 @@ class Client:
             print('-' * 40)
             print(str)
             print('=' * 40 + '\n')
+
+    def console_select_opponent(self, ):
+        print(Fore.YELLOW + "\nSelect opponent (format: IP-PORT, e.g., 127.0.0.1-8888):" + Style.RESET_ALL)
+        op = input('Your input: ').strip()
+        msg = f'{self.socket.getsockname()[0]}-{self.socket.getsockname()[1]}-{op}'
+        self.socket.send(f'SELECTOPPONENT|{msg}\n'.encode('utf-8'))     
 
     def handle_command(self, commands):
         for command in commands.split('\n'):
@@ -75,13 +81,12 @@ class Client:
             if cmd == 'PRINT':
                 Client.console_template(command + '\n')
             elif cmd == 'SELECTOPPONENT':
-                op = input('Select opponent (in the format of ip-port): e.g., 127.0.0.1-8888\n')
-                msg = f'{self.socket.getsockname()[0]}-{self.socket.getsockname()[1]}-{op}'
-                self.socket.send(f'SELECTOPPONENT|{msg}\n'.encode('utf-8'))
+                self.console_select_opponent()
             elif cmd == 'INPUTWORD':
                 w = input('Input word: ')
                 self.socket.send(f"INPUTWORD|{w}\n".encode('utf-8'))
             elif cmd == 'CLOSECONNECTION':
+                time.sleep(1)
                 self.close_connection()
         
     def close_connection(self, ):

@@ -91,9 +91,9 @@ class HostCheatingWordle(Wordle):
                 s = self.score(word, input_word)
                 tmp_score[s].append(word)
             
-            # min_s = 50
+            # 1 score for present, 10 score for hit
+            # therefore, 50 score in maximum for each word and 0 in minimum
             for i in range(51):
-                print('i', i, 'len', len(tmp_score[i]), tmp_score[i])
                 if len(tmp_score[i]) == 0:
                     continue
                 elif len(tmp_score[i]) == 1:
