@@ -109,10 +109,10 @@ class Server:
                 host_co.game.set_opponent(opponent_co.addr)
                 opponent_co.game.set_opponent(host_co.addr)
                 opponent_co.game.set_objective_word(host_co.game.wordle.objective_word)
-                print('server.handle_cmd host word path', host_co, host_co.game, host_co.game.wordle, host_co.game.wordle.word_path)
+                # print('server.handle_cmd host word path', host_co, host_co.game, host_co.game.wordle, host_co.game.wordle.word_path)
                 opponent_co.game.re_init(host_co.game.wordle.max_round, host_co.game.wordle.word_path)
-                print('host state', host_co.game.state)
-                print('opponent state', opponent_co.game.state)
+                # print('host state', host_co.game.state)
+                # print('opponent state', opponent_co.game.state)
                 host_co.game.set_state('setup')
                 opponent_co.game.set_state('setup')
 
@@ -147,9 +147,9 @@ class Server:
                         threading.Thread(target=self.help_client_play, args = (co, )).start()
                     elif co.game and co.game.state == 'end':
                         if co.game.result == 'win':
-                            Server.send_msg_to_client(co, 's', 'c', 'PRINT|Win')
+                            Server.send_msg_to_client(co, 's', 'c', f'PRINT|Win The objective word is {co.game.wordle.objective_word}')
                         else:
-                            Server.send_msg_to_client(co, 's', 'c', 'PRINT|Lose')
+                            Server.send_msg_to_client(co, 's', 'c', f'PRINT|Lose The objective word is {co.game.wordle.objective_word}')
                         Server.send_msg_to_client(co, 's', 'c', 'PRINT|Close connection')
                         Server.send_msg_to_client(co, 's', 'c', 'CLOSECONNECTION|')
                         self.connection_list.remove(co)

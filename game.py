@@ -1,5 +1,6 @@
 import time
 import json
+from colorama import Fore, Style
 
 from wordle import WordleFactory, NormalWordle, HostCheatingWordle
 # from server import Server
@@ -28,7 +29,7 @@ class Game():
 
     def __init__(self, ):
         self.state = 'notsetup' # notsetup, setup, playing
-        self.result = 'none' # none, win, lose
+        self.result = '' # '', win, lose
         self.wordle = None
         self.client_input_word_list = []
     
@@ -56,31 +57,70 @@ class Game():
     def setup_game_console():
         param_dict = {}
         # 
-        game_type_msg = ''
+        print("=" * 40)
+        print(Fore.CYAN + "Welcome to Wordle Setup Console" + Style.RESET_ALL)
+        print("=" * 40)
+        #
+        # Select game type
+        print(Fore.YELLOW + "\nPlease select the game type:" + Style.RESET_ALL)
         for idx, t in enumerate(Game.game_type_list):
-            game_type_msg += f'{idx} - {Game.game_type_list[idx]}\n'
-        game_type_idx = int(input(f'=======\nPlease select the game type:\n{game_type_msg}'))
+            print(f"  {idx} - {t}")
+        while True:
+            try:
+                game_type_idx = int(input("\nYour choice: "))
+                if game_type_idx not in range(len(Game.game_type_list)):
+                    raise ValueError
+                break
+            except ValueError:
+                print(Fore.RED + "Invalid input. Please enter a valid number." + Style.RESET_ALL)
         param_dict['game_type_idx'] = game_type_idx
         # 
-        if game_type_idx == 2:  # Multi-player game
-            is_host = input('Are you the host? (yes/no): ').strip().lower() == 'yes'
-            param_dict['is_host'] = is_host
+        # Multiplayer-specific settings
+        if game_type_idx == 2:
+            while True:
+                is_host_input = input("\nAre you the host? (yes/no): ").strip().lower()
+                if is_host_input in ['yes', 'no']:
+                    is_host = is_host_input == 'yes'
+                    param_dict['is_host'] = is_host
+                    break
+                else:
+                    print(Fore.RED + "Please answer with 'yes' or 'no'." + Style.RESET_ALL)
+
             if not is_host:
-                print('You are a player. Waiting for the host to set up the game.')
+                print(Fore.MAGENTA + "\nYou are a player. Waiting for the host to set up the game..." + Style.RESET_ALL)
                 param_dict['max_round'] = None
                 param_dict['word_path_idx'] = None
                 return json.dumps(param_dict)
             else:
-                print('You are the host. Please set up the game parameters.')
+                print(Fore.MAGENTA + "\nYou are the host. Please set up the game parameters." + Style.RESET_ALL)
         #
-        max_round = int(input('=======\ninput max round:'))
-        param_dict['max_round'] = max_round
+        # Input max round
+        while True:
+            try:
+                max_round = int(input("\n Enter max number of rounds (e.g., 6): "))
+                if max_round <= 0:
+                    raise ValueError
+                param_dict['max_round'] = max_round
+                break
+            except ValueError:
+                print(Fore.RED + "Invalid number. Please enter a positive integer." + Style.RESET_ALL)
+
         # 
-        word_path_msg = ''
+        # Select word list
+        print(Fore.YELLOW + "\n Choose word list:" + Style.RESET_ALL)
         for idx, t in enumerate(Game.word_path_list):
-            word_path_msg += f'{idx} - {Game.word_path_list[idx]}\n'
-        word_path_idx = int(input(f'=======\nPlease input which word list you want to use:\n{word_path_msg}'))
-        param_dict['word_path_idx'] = word_path_idx
+            print(f"  {idx} - {t}")
+        while True:
+            try:
+                word_path_idx = int(input("\nYour choice: "))
+                if word_path_idx not in range(len(Game.word_path_list)):
+                    raise ValueError
+                param_dict['word_path_idx'] = word_path_idx
+                break
+            except ValueError:
+                print(Fore.RED + "Invalid input. Please enter a valid number." + Style.RESET_ALL)
+
+        print(Fore.GREEN + "\n🟢 Game setup complete!\n" + Style.RESET_ALL)
         return json.dumps(param_dict)
     
     
@@ -137,7 +177,7 @@ class ServerClientGame(Game):
                 Game.send_msg_to_client(co, 's', 'c', 'PRINT|Win')
                 self.set_result('win')
                 break
-            if len(self.client_input_word_list) > precnt or (len(co.command_history) > 0 and co.command_history[-1][2].split('')[0] == 'REQUIREINPUTWORD'):
+            if len(self.client_input_word_list) > precnt or (len(co.command_history) > 0 and co.command_history[-1][2].split('|')[0] == 'REQUIREINPUTWORD'):
                 Game.send_msg_to_client(co, 's', 'c', 'INPUTWORD|')
                 precnt = len(self.client_input_word_list)
             else:
@@ -176,8 +216,9 @@ class HostCheatingGame(Game):
             time.sleep(0.1)
             if len(self.client_input_word_list) >= self.wordle.max_round:
                 break
+            print('self.client_input_word_list', self.client_input_word_list)
             if len(self.client_input_word_list) > 0 and self.client_input_word_list[-1][1] == '00000':
-                Game.send_msg_to_client(co, 's', 'c', 'PRINT|Win')
+                # Game.send_msg_to_client(co, 's', 'c', 'PRINT|Win')
                 self.set_result('win')
                 break
             if len(self.client_input_word_list) > precnt or (len(co.command_history) > 0 and co.command_history[-1][2].split('|')[0] == 'REQUIREINPUTWORD'):
@@ -185,6 +226,10 @@ class HostCheatingGame(Game):
                 precnt = len(self.client_input_word_list)
             else:
                 time.sleep(0.1)
+        
+        if self.result == '':
+            if len(self.client_input_word_list) > 0 and self.client_input_word_list[-1][1] == '00000':
+                self.set_result('win')
 
         print('self.result', self.result)
         if self.result != 'win':

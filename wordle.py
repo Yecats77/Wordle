@@ -29,9 +29,7 @@ class Wordle:
         with open(word_path, mode = 'r') as f:
             L = f.readlines()
         self.word_list = [i.strip().replace('\n', '') for i in L]
-        print(self.word_list[:10])
         self.word_list.sort()
-        print(self.word_list[:10])
 
 class NormalWordle(Wordle):
 
@@ -69,7 +67,11 @@ class HostCheatingWordle(Wordle):
                 s += 1
         return s
     
+    def random_word(self, ):
+        return random.choice(self.candidate_word_list)
+    
     def check_util(self, input_word: str):
+        print('wordle.check_util input_word', input_word, 'objective_word', self.objective_word)
         res = '' 
         for i in range(5):
             if input_word[i] == self.objective_word[i]:
@@ -88,22 +90,22 @@ class HostCheatingWordle(Wordle):
                 s = self.score(word, input_word)
                 tmp_score[s].append(word)
             
-            min_s = 50
+            # min_s = 50
             for i in range(51):
+                print('i', i, 'len', len(tmp_score[i]), tmp_score[i])
                 if len(tmp_score[i]) == 0:
                     continue
                 elif len(tmp_score[i]) == 1:
-                    min_s = i
+                    # min_s = i
                     self.objective_word = tmp_score[i][0]
                     return self.check_util(input_word)
                 else:
-                    min_s = i
+                    # min_s = i
                     self.candidate_word_list = tmp_score[i]
                     if i == 0:
-                        print('len of candidate', len(self.candidate_word_list), self.candidate_word_list)
                         return '_____'
                     else:
-                        self.objective_word = random.choice(self.candidate_word_list)
+                        self.objective_word = self.random_word()
                         print('len of candidate', len(self.candidate_word_list), self.candidate_word_list)
                         print('randomly choose', self.objective_word)
                         return self.check_util(input_word)
@@ -139,6 +141,7 @@ class MultiPlayerWordle(Wordle):
         self.objective_word = objective_word
 
     def random_word(self, ):
+        print('wordle.random_word self.word_list', self.word_list)
         return random.choice(self.word_list)
 
     def check(self, input_word: str):
