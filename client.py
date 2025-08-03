@@ -39,8 +39,15 @@ class Client:
             cmds = command.strip().split('|') 
             cmd = cmds[0]
 
+            # if cmd == 'PRINT':
+            #     print(f'Message from server: {command}\n')
             if cmd == 'PRINT':
-                print(f'Message from server: {command}\n')
+                content = '|'.join(cmds[1:])
+                print("\n" + "=" * 40)
+                print("🟢  Message from server")
+                print("-" * 40)
+                print(content)
+                print("=" * 40 + "\n")
             elif cmd == 'SELECTOPPONENT':
                 op = input('Select opponent (in the format of ip-port): e.g., 127.0.0.1-8888\n')
                 msg = f'{self.socket.getsockname()[0]}-{self.socket.getsockname()[1]}-{op}'
