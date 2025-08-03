@@ -71,9 +71,10 @@ class Server:
 
     @staticmethod
     def send_msg_to_client(co: Connection, src, des, msg):
-        if co.game.state == 'refuse_result_msg':
-            return
         try:
+            # if msg.split('|')[0] != 'CLOSECONNECTION':
+            if co.game.state == 'refuse_result_msg':
+                return
             msg += '\n'
             co.add_command_history(src, des, msg)
             co.client_socket.send(msg.encode('utf-8'))
@@ -94,9 +95,7 @@ class Server:
                     param_dict = json.loads(param)
                     game_type_idx = param_dict['game_type_idx']
                     g = GameFactory().new_game(param_json)
-                    print('new game', co.addr, g.wordle.word_path)
                     co.set_game(g)
-                    print(co.addr, 'has set up a game:', g.game_type)
                     if game_type_idx == 2: # Multi-player game
                         is_host = param_dict['is_host']
                         if is_host:
@@ -106,10 +105,7 @@ class Server:
                     print(e)
             elif cmd == 'SELECTOPPONENT':
                 try:
-                    print(f'receive {param}')
                     host_ip, host_port, opponent_ip, opponent_port = param.split('-') # these two are both clients
-                    print(f'Host {host_ip}:{host_port} selected opponent {opponent_ip}:{opponent_port}')
-                    print('self.connection_list len', len(self.connection_list))
                     host_co = None
                     opponent_co = None
                     for co in self.connection_list:
@@ -121,9 +117,10 @@ class Server:
                         if host_co and opponent_co:
                             break
                     if not host_co or not opponent_co:
-                        raise ValueError(f'Host or opponent connection not found. Host {host_co}, Opponent {opponent_co}')
+                        raise ValueError("Host or opponent connection not found")
                     else:
-                        print(f'Host {host_co.addr} and Opponent {opponent_co.addr} are ready to play.')
+                        print(f'{Fore.BLUE}[INFO]{Style.RESET_ALL} Host {host_co.addr} and Opponent {opponent_co.addr} are ready to play.')
+
                     host_co.game.set_opponent(opponent_co.addr)
                     opponent_co.game.set_opponent(host_co.addr)
                     opponent_co.game.set_objective_word(host_co.game.wordle.objective_word)
@@ -155,27 +152,24 @@ class Server:
             while True:
                 for co in self.connection_list:
                     if co.game and co.game.state == 'setup':
-                        print(co.addr, 'game state is setup, the odj word is', co.game.wordle.objective_word)
                         co.game.set_state('setup_reminded')
-                        if co.game.game_type == 'multi-player' and co.game.is_host:
-                            print('monitor', co.addr[0] + '-' + str(co.addr[1]), co.game.opponent)
-                            # op = self.find_connection_by_addr(co.game.opponent)
-                            # threading.Thread(target=self.monitor_host_and_opponent, args = (co, op)).start()
+                        print(co.addr, 'game state is setup, the odj word is', co.game.wordle.objective_word)
+                        # if co.game.game_type == 'multi-player' and co.game.is_host:
+                        #     print('monitor', co.addr[0] + '-' + str(co.addr[1]), co.game.opponent)
                         threading.Thread(target=self.help_client_play, args = (co, )).start()
                     # multi-player mode will be processed by self.monitor_host_and_opponent()
                     elif co.game and co.game.state == 'end':
-                        print('co.game.client_input_word_list', co.game.client_input_word_list)
                         if co.game.result == '':
                             if co.game.client_input_word_list[-1][1] == '00000':
                                 co.game.set_result('win')
-                        print('co.game.result', co.game.result)
                         if co.game.game_type == 'multi-player':
                             op = self.find_connection_by_addr(co.game.opponent)
-                            if co.game.state != 'end':
-                                self.monitor_host_and_opponent(co, op)
+                            # print('-------------', co.game.state, co.game.result, co.game.wordle.objective_word)
+                            # if co.game.state != 'end':
+                            self.monitor_host_and_opponent(co, op)
                         if co.game.result == 'win':
                             Server.send_msg_to_client(co, 's', 'c', f'PRINT|Win The objective word is {co.game.wordle.objective_word}')
-                        else:
+                        elif co.game.result == 'lose':
                             Server.send_msg_to_client(co, 's', 'c', f'PRINT|Lose The objective word is {co.game.wordle.objective_word}')
                         Server.send_msg_to_client(co, 's', 'c', 'PRINT|Close connection')
                         Server.send_msg_to_client(co, 's', 'c', 'CLOSECONNECTION|')
@@ -183,7 +177,6 @@ class Server:
                         self.pre_connection_list.append(co)
                         co.game.set_state('end_reminded')
         except Exception as e:
-            print(f"Error in execute_game: {e}")
             print("Exiting game execution thread.")
     
     def find_connection_by_addr(self, addr):
@@ -202,16 +195,18 @@ class Server:
                 host_co.game.set_state('end')
                 opponent_co.game.set_state('end')
                 opponent_co.game.set_result('lose')
-                Server.send_msg_to_client(host_co, 's', 'c', 'PRINT|You win')
-                Server.send_msg_to_client(opponent_co, 's', 'c', 'PRINT|You lose. Your opponent wins')
+                Server.send_msg_to_client(host_co, 's', 'c', f'CLOSECONNECTION|You win. You have defeated your opponent. The objective word is {host_co.game.wordle.objective_word}')
+                Server.send_msg_to_client(opponent_co, 's', 'c', f'CLOSECONNECTION|You have lost to your opponent. The objective word is {opponent_co.game.wordle.objective_word}')
+                time.sleep(1)
                 host_co.game.set_state('refuse_result_msg')
                 opponent_co.game.set_state('refuse_result_msg')
             elif opponent_co.game.result == 'win':
                 host_co.game.set_state('end')
                 host_co.game.set_result('lose')
                 opponent_co.game.set_state('end')
-                Server.send_msg_to_client(opponent_co, 's', 'c', 'PRINT|You win')
-                Server.send_msg_to_client(host_co, 's', 'c', 'PRINT|You lose. Your opponent wins')
+                Server.send_msg_to_client(opponent_co, 's', 'c', f'CLOSECONNECTION|You win. You have defeated your opponent. The objective word is {opponent_co.game.wordle.objective_word}')
+                Server.send_msg_to_client(host_co, 's', 'c', f'CLOSECONNECTION|You have lost to your opponent. The objective word is {host_co.game.wordle.objective_word}')
+                time.sleep(1)
                 host_co.game.set_state('refuse_result_msg')
                 opponent_co.game.set_state('refuse_result_msg')
             elif host_co.game.result == 'lose' or opponent_co.game.result == 'lose':
@@ -219,14 +214,14 @@ class Server:
                 opponent_co.game.set_result('lose')
                 host_co.game.set_state('end')
                 opponent_co.game.set_state('end')
-                Server.send_msg_to_client(host_co, 's', 'c', 'PRINT|Both of you lose')
-                Server.send_msg_to_client(opponent_co, 's', 'c', 'PRINT|Both of you lose')
+                Server.send_msg_to_client(host_co, 's', 'c', f'CLOSECONNECTION|Both of you lose. The objective word is {host_co.game.wordle.objective_word}')
+                Server.send_msg_to_client(opponent_co, 's', 'c', f'CLOSECONNECTION|Both of you lose. The objective word is {opponent_co.game.wordle.objective_word}')
+                time.sleep(1)
                 host_co.game.set_state('refuse_result_msg')
                 opponent_co.game.set_state('refuse_result_msg')
                 
     def help_client_play(self, co: Connection):
         co.game.play(co)
-        print('co.game.client_input_word_list', co.game.client_input_word_list)
         return
         
 

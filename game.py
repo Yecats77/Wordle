@@ -8,7 +8,6 @@ from connection import Connection
 class GameFactory():
     @staticmethod
     def new_game(param_json: str): 
-        print('game fac param_json', param_json)
         param_dict = json.loads(param_json)
         game_type_idx = param_dict['game_type_idx']
         g = None
@@ -238,8 +237,6 @@ class HostCheatingGame(Game):
 
 class MultiPlayerGame(Game): 
     def __init__(self, param_dict: dict):
-        print('set multiplyer game')
-        print('param_dict', param_dict, param_dict.get('word_path_idx', None))
         super().__init__()
         self.game_type = 'multi-player'
         max_round = param_dict.get('max_round', None)
@@ -255,7 +252,6 @@ class MultiPlayerGame(Game):
         self.opponent = opponent
     
     def re_init(self, max_round: int, word_path: str):
-        print('game.re_init', max_round, word_path)
         self.wordle.re_init(max_round, word_path)
     
     def set_objective_word(self, objective_word: str):

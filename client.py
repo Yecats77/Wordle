@@ -44,17 +44,17 @@ class Client:
                 else:
                     print(c, end = '')
             print('\n')
-        elif 'win' in str.lower().split(' ')[0]:
-            print('\n' + '=' * 40)
-            print('🟢  Message from server')
-            print('-' * 40)
-            print(Fore.GREEN + str + Style.RESET_ALL)
-            print('=' * 40 + '\n')
-        elif 'lose' in str.lower().split(' ')[0] or 'fail' in str.lower().split(' ')[0]:
+        elif 'lose' in str.lower() or 'lost' in str.lower() or 'fail' in str.lower():
             print('\n' + '=' * 40)
             print('🔴  Message from server')
             print('-' * 40)
             print(Fore.RED + str + Style.RESET_ALL)
+            print('=' * 40 + '\n')
+        elif 'win' in str.lower():
+            print('\n' + '=' * 40)
+            print('🟢  Message from server')
+            print('-' * 40)
+            print(Fore.GREEN + str + Style.RESET_ALL)
             print('=' * 40 + '\n')
         else:
             print('\n' + '=' * 40)
@@ -86,12 +86,12 @@ class Client:
                 w = input('Input word: ')
                 self.socket.send(f"INPUTWORD|{w}\n".encode('utf-8'))
             elif cmd == 'CLOSECONNECTION':
-                time.sleep(1)
-                self.close_connection()
+                time.sleep(2)
+                self.close_connection(cmds[1])
         
-    def close_connection(self, ):
-        print(self.socket)
+    def close_connection(self, msg: str):
         if self.socket:
+            Client.console_template(msg + '\n')
             self.socket.close()
             self.socket = None
         return
@@ -99,13 +99,11 @@ class Client:
 
 if __name__ == '__main__':
     c = Client()
-    n_retry = 1
-    for i in range(n_retry):
-        try:
-            c.start_connection()
-            c.select_game()
-            c.listen_to_server()
-        except Exception as e:
-            print(e)
-            print('Connect failed. Retrying.')
+    try:
+        c.start_connection()
+        c.select_game()
+        c.listen_to_server()
+    except Exception as e:
+        print(e)
+        print('Connect failed. Retrying.')
 
