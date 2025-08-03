@@ -2,12 +2,12 @@ import socket
 import threading
 import sys
 import json
+from colorama import Fore, Style
 
 from game import GameFactory
 from connection import Connection
 
 class Server:
-    # port = 5555
     def __init__(self):
         self.game = None
         self.socket = None
@@ -41,13 +41,30 @@ class Server:
         self.socket.close()
 
     def listen_to_client(self, co: Connection):
+        # while co.client_socket:
+        #     try:
+        #         client_command = co.client_socket.recv(1024).decode('utf-8')
+        #         if client_command:
+        #             print(f"=======> Received: {client_command}")
+        #             self.handle_command(co, client_command)
+        #     except:
+        #         break
         while co.client_socket:
             try:
                 client_command = co.client_socket.recv(1024).decode('utf-8')
                 if client_command:
-                    print(f"=======> Received: {client_command}")
-                    self.handle_command(co, client_command)
-            except:
+                    for line in client_command.strip().split('\n'):
+                        if line.strip():
+                            print(f"{Fore.BLUE}[RECEIVED]{Style.RESET_ALL} {Fore.CYAN}{co.addr}{Style.RESET_ALL} → {Fore.YELLOW}{line}{Style.RESET_ALL}")
+                            self.handle_command(co, line)
+                else:
+                    print(f"{Fore.LIGHTBLACK_EX}[DISCONNECT]{Style.RESET_ALL} Client {co.addr} closed the connection.")
+                    break
+            except ConnectionResetError:
+                print(f"{Fore.RED}[CONNECTION RESET]{Style.RESET_ALL} Client {co.addr} unexpectedly dropped.")
+                break
+            except Exception as e:
+                print(f"{Fore.RED}[ERROR]{Style.RESET_ALL} while receiving from {co.addr}: {e}")
                 break
                 
         # connection.client_socket.close()
