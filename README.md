@@ -28,6 +28,8 @@ wordle/
 2. **Host Cheating** — _Task 3_
 3. **Multiplayer** — _Task 4_
 
+   In this game, each present will be scores 1 and each hit will be scored 1. I consider a one-hit round will be better than a 5-present round.
+
    In Multi-Player mode, 2 players guessing the same word, while being able to monitor their opponents’
    progress.
 
